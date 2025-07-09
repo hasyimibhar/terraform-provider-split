@@ -94,6 +94,38 @@ func (u *UsersService) Get(id string) (*User, *simpleresty.Response, error) {
 	return &result, response, getErr
 }
 
+func (u *UsersService) FindByEmail(email string) (*User, *simpleresty.Response, error) {
+	var user User
+	opts := &UserListOpts{
+		Limit: 100,
+	}
+
+	var userList *UserListResult
+	var response *simpleresty.Response
+	var err error
+
+	for {
+		userList, response, err = u.List(opts)
+		if err != nil {
+			return &user, response, err
+		}
+
+		for _, uu := range userList.Data {
+			if uu.Email != nil && *uu.Email == email {
+				user = *uu
+				return &user, response, nil
+			}
+		}
+
+		if userList.NextMarker == nil {
+			break
+		}
+		opts.After = *userList.NextMarker
+	}
+
+	return &user, response, nil
+}
+
 // Invite a new user to your organization. They will be created with a Pending status
 //
 // Reference: https://docs.split.io/reference#invite-a-new-user
